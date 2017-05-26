@@ -5,7 +5,6 @@
 #include <string.h>
 #include <iostream>
 #include <sstream>
-#include <string>
 #include <vector>
 
 #include "fsa.h"
