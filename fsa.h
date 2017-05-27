@@ -16,8 +16,16 @@ struct FSATableElement {
   std::string str;
 };
 
+struct Cluster {
+  std::vector<int> cur_state;
+  std::vector<int> next_state;
+  std::string input;
+  int isfinal;      // Decide whether it's final state.
+};
+
 struct FiniteStateAutomaton {
   // Make your own FSA struct here.
+  std::vector<Cluster> dfa;
 };
 
 // Run FSA and return true if str is matched by fsa, and false otherwise.
