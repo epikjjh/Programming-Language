@@ -7,6 +7,7 @@
 #include <set>
 #include <string>
 #include <map>
+#include <vector>
 
 // Valid characters are alphanumeric and underscore (A-Z,a-z,0-9,_).
 // Epsilon moves in NFA are represented by empty strings.
@@ -22,7 +23,7 @@ struct FiniteStateAutomaton {
   /* key : current state.
      value : input and next states(next states can be multiple).
   */
-  map<int, map<std::string, std::set<int> > > states;
+  std::map<int, std::map<std::string, std::set<int> > > states;
   std::set<int> isfinal;
 };
 

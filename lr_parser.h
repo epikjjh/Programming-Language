@@ -36,6 +36,8 @@ struct LRRule {
 
 struct LRParser {
   // Design your LRParser structure.
+  std::vector<LRTableElement> table;
+  std::vector<LRRule> rules;
 };
 
 // Homework 1.2
@@ -45,6 +47,6 @@ bool BuildLRParser(const std::vector<LRTableElement>& elements,
 
 // Homework 1.2
 bool RunLRParser(const LRParser& lr_parser, const std::string& str);
-
+std::pair<LRAction, int> Match(std::vector<LRTableElement> table, int state, int symbol);
 #endif //_PL_HOMEWORK_LR_PARSER_H_
 

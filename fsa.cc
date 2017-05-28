@@ -13,47 +13,46 @@ using namespace std;
 
 bool RunFSA(const FiniteStateAutomaton& fsa, const string& str) {
   // Implement this function.
-  return false;
+  set<int> state;
+  bool accept;
+
+  if(str.size() == 1){
+
+      state.insert(fsa->states[1][str]);
+
+  }
+  else if(str.size() > 1){
+
+
+  }
+
 }
 
 bool BuildFSA(const std::vector<FSATableElement>& elements,
               const std::vector<int>& accept_states,
               FiniteStateAutomaton* fsa) {
-  // Implement this function. 
+    // Implement this function. 
 
-  for(elem_iter = elements.begin(); elem_iter != elements.end(); elem_iter++){
-        if(elem_iter->str.empty() == 1){
-            nfa = 1;
-            break;
-        }
-  }
+    for(int i = 0; i < elements.size(); i++){
+        if(elements[i].str.size() > 1){
+            string temp;
 
-  /* DFA */
-  if(!nfa){
-        for(int i = 0; i < elements.size(); i++){
-            if(elem_iter->str.size() != 1){
-                string temp;
+            for(int j = 0; j < elements[j].str.size(); j++){
+                temp = elements[i].str.substr(j,1);
 
-                for(int j = 0; j < elem_iter->str.size(); j++){
-                    temp = elem_iter->str.substr(j,1);
-
-                    fsa->states[elements[i].state][temp].insert(elements[i].next_state);
-                }
+                fsa->states[elements[i].state][temp].insert(elements[i].next_state);
             }
-            else
-                fsa->states[elements[i].state][elements[i].str].insert(elements[i].next_state);
         }
-        for(int i = 0; i < accept_states.size(); i++){
-            f->isfinal.insert(accept_states[i];
-        }
-  }
-  /* NFA */
-  else{
-    // Build NFA first
-    
+        else
+            fsa->states[elements[i].state][elements[i].str].insert(elements[i].next_state);
+    }
+    for(int i = 0; i < accept_states.size(); i++){
+        fsa->isfinal.insert(accept_states[i]);
+    }
 
     LOG << "num_elements: " << elements.size()
         << ", accept_states: " << accept_states.size() << endl;
-    return false;
-  }
+    if(elements.size() <= 0)
+        return false;
+    return true;
 }
