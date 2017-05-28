@@ -20,95 +20,40 @@ bool BuildFSA(const std::vector<FSATableElement>& elements,
               const std::vector<int>& accept_states,
               FiniteStateAutomaton* fsa) {
   // Implement this function. 
-  std::vector<FSATableElement>::const_iterator elem_iter;
-  std::vector<int>::const_iterator fin_iter = accept_states.begin();
-  std::vector<int>::iterator duplicate;
-  Cluster first_elem;
-  int cur_size,next_size,add;
 
-  /* Create first cluster. */
-
-  // Initialize first_elem.
-  first_elem.isfinal = 0;
-
-  // Start with 1 state.
-  first_elem.cur_state.push_back(1);
-  // Check if it's final state.
-  for(; fin_iter != accept_states.end(); fin_iter++){
-    if((*fin_iter) == 1){
-        first_elem.isfinal = 1;
-    }
+  for(elem_iter = elements.begin(); elem_iter != elements.end(); elem_iter++){
+        if(elem_iter->str.empty() == 1){
+            nfa = 1;
+            break;
+        }
   }
 
-  do{
-    cur_size = next_size = first_elem.cur_state.size();
+  /* DFA */
+  if(!nfa){
+        for(int i = 0; i < elements.size(); i++){
+            if(elem_iter->str.size() != 1){
+                string temp;
 
-    for(elem_iter = elements.begin(); elem_iter != elements.end(); elem_iter++){
-      if(elem_iter->state == 1 && elem_iter->str.empty() == 1){
-        add = 1;
-        // Check if it's duplicated.
-        for(duplicate = first_elem.cur_state.begin(); duplicate != first_elem.cur_state.end(); duplicate++){
-            if((*duplicate) == elem_iter->next_state){
-                add = 0;
-                break;
-            }
-        }
-        if(add){
-            first_elem.cur_state.push_back(elem_iter->next_state);
-            next_size++;
-        }
+                for(int j = 0; j < elem_iter->str.size(); j++){
+                    temp = elem_iter->str.substr(j,1);
 
-        // Check if it's final state.
-        for(fin_iter = accept_states.begin(); fin_iter != accept_states.end(); fin_iter++){
-          if((*fin_iter) == elem_iter->next_state){
-            first_elem.isfinal = 1;
-          }       
-        }     
-      }
-    }
-
-    for(unsigned i = 0; i < first_elem.cur_state.size(); i++){
-        for(elem_iter = elements.begin(); elem_iter != elements.end(); elem_iter++){
-            if(first_elem.cur_state[i] == elem_iter->state && elem_iter->str.empty() == 1){
-                add = 1;
-                // Check if it's duplicated.
-                for(duplicate = first_elem.cur_state.begin(); duplicate != first_elem.cur_state.end(); duplicate++){
-                    if((*duplicate) == elem_iter->next_state){
-                        add = 0;
-                        break;
-                    }
-                }
-                if(add){
-                    first_elem.cur_state.push_back(elem_iter->next_state);
-                    next_size++;
-                }
-
-                // Check if it's final state.
-                for(fin_iter = accept_states.begin(); fin_iter != accept_states.end(); fin_iter++){
-                    if((*fin_iter) == elem_iter->next_state){
-                        first_elem.isfinal = 1;
-                    }       
+                    fsa->states[elements[i].state][temp].insert(elements[i].next_state);
                 }
             }
+            else
+                fsa->states[elements[i].state][elements[i].str].insert(elements[i].next_state);
         }
-    }
-  }while(cur_size != next_size);
-
-  cout << first_elem.cur_state.size() << first_elem.next_state.size() << first_elem.input << first_elem.isfinal << endl;
-  
-
-
-
-
-/*
-  while(1){
-      Cluster new_elem;
-      
-
-      fsa->dfa.push_back(new_elem);
+        for(int i = 0; i < accept_states.size(); i++){
+            f->isfinal.insert(accept_states[i];
+        }
   }
-*/
-  LOG << "num_elements: " << elements.size()
-      << ", accept_states: " << accept_states.size() << endl;
-  return false;
+  /* NFA */
+  else{
+    // Build NFA first
+    
+
+    LOG << "num_elements: " << elements.size()
+        << ", accept_states: " << accept_states.size() << endl;
+    return false;
+  }
 }

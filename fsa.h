@@ -4,8 +4,9 @@
 #ifndef _PL_HOMEWORK_FSA_H_
 #define _PL_HOMEWORK_FSA_H_
 
-#include <vector>
+#include <set>
 #include <string>
+#include <map>
 
 // Valid characters are alphanumeric and underscore (A-Z,a-z,0-9,_).
 // Epsilon moves in NFA are represented by empty strings.
@@ -16,16 +17,13 @@ struct FSATableElement {
   std::string str;
 };
 
-struct Cluster {
-  std::vector<int> cur_state;
-  std::vector<int> next_state;
-  std::string input;
-  int isfinal;      // Decide whether it's final state.
-};
-
 struct FiniteStateAutomaton {
   // Make your own FSA struct here.
-  std::vector<Cluster> dfa;
+  /* key : current state.
+     value : input and next states(next states can be multiple).
+  */
+  map<int, map<std::string, std::set<int> > > states;
+  std::set<int> isfinal;
 };
 
 // Run FSA and return true if str is matched by fsa, and false otherwise.

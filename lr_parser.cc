@@ -5,6 +5,7 @@
 
 #include <iostream>
 #include <vector>
+#include <stack>
 
 #include "lr_parser.h"
 
@@ -17,10 +18,10 @@ using namespace std;
 bool BuildLRParser(const std::vector<LRTableElement>& elements,
                    const std::vector<LRRule>& rules,
                    LRParser* lr_parser) {
+
   return false;
 }
 
 bool RunLRParser(const LRParser& lr_parser, const std::string& str) {
-  return false;
+    return false;
 }
-
