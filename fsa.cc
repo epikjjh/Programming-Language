@@ -13,7 +13,7 @@ using namespace std;
 
 bool RunFSA(const FiniteStateAutomaton& fsa, const string& str) {
   // Implement this function.
-  map<string, string>::iterator iter;
+  map<string, string>::const_iterator iter;
   string transition,isfinal;
   int index = 0;
   char input = str[0];
@@ -21,13 +21,14 @@ bool RunFSA(const FiniteStateAutomaton& fsa, const string& str) {
   // Start state : 1
   string cur_state = Change_to_string(1);
 
+  // Loop until input string ends.
   while(str[index] != '\0'){
         // Create transition : cur_state + input
         transition = cur_state + input;
         // Find if tansition is in table.
-        iter = fsa->table.find(transition);
+        iter = (fsa.table).find(transition);
 
-        if(iter != fsa->table.end())
+        if(iter != fsa.table.end())
             // When find transition. change current state.
             cur_state = iter->second;
         else
@@ -41,9 +42,9 @@ bool RunFSA(const FiniteStateAutomaton& fsa, const string& str) {
   // When inputs end, check current state is in accept states.
   isfinal = cur_state;
 
-  for(int i = 0; i < fsa->accept.size(); i++){
+  for(int i = 0; i < fsa.accept.size(); i++){
         for(int j = 0; j < isfinal.size(); j++){
-            if(fsa->accept[i] == (int)(isfinal[j]-'0'))
+            if(fsa.accept[i] == (int)(isfinal[j]-'0'))
                 return true;
         }
   }
@@ -59,7 +60,7 @@ bool BuildFSA(const std::vector<FSATableElement>& elements,
     std::vector<elem> storage;
     int nfa = 0;
 
-    /* Converse string input to char input */
+    /* Convert string input to char input */
     // Tricky case : input - "ab"
     // Split in to "a" and "b"
     for(elem_iter = elements.begin(); elem_iter != elements.end(); elem_iter++){
@@ -69,7 +70,7 @@ bool BuildFSA(const std::vector<FSATableElement>& elements,
         new_elem.next_state = elem_iter->next_state;
         // Multiple input
         if(elem_iter->str.size() > 1){
-            for(int i = 0; i < str.size(); i++){
+            for(int i = 0; i < elem_iter->str.size(); i++){
                 char tmp = elem_iter->str[i];
 
                 if(i == 0){
@@ -88,14 +89,14 @@ bool BuildFSA(const std::vector<FSATableElement>& elements,
             storage.push_back(new_elem);
         }
         // Epsilon
-        else if(elem_iter->str.size() == 0{
-            new_elem.input = ''; 
+        else if(elem_iter->str.empty() == 1){
+            new_elem.input = 0; 
 
             storage.push_back(new_elem);
         }
         // Normal input
         else{
-            char tmp = elem_iter[0];
+            char tmp = elem_iter->str[0];
 
             new_elem.input = tmp;
 
@@ -107,14 +108,14 @@ bool BuildFSA(const std::vector<FSATableElement>& elements,
 
     // When epsilon appears.
     for(int i = 0; i < storage.size(); i++){
-        if(storage[i].input == ''){
+        if(storage[i].input == 0){
             nfa = 1;
             break;
         }
     }
     // When one state has two or more next_state.
     for(int i = 0; i < storage.size(); i++){
-        for(int j = i+1; j < storage.size; j++){
+        for(int j = i+1; j < storage.size(); j++){
             // Same current state, same input.
             if(storage[i].state == storage[j].state && storage[i].input == storage[j].input){
                 nfa = 1;
@@ -127,12 +128,9 @@ bool BuildFSA(const std::vector<FSATableElement>& elements,
 
     /* Build the fsa */
 
-    /* DFA*/
+    /* DFA */
     if(!nfa){
         string transition, next;
-
-        // Initial state : 1
-        fsa->initial = Change_to_string(1);
 
         // Put current state + input and next staet
         // (String) transition = current state + input
@@ -151,123 +149,160 @@ bool BuildFSA(const std::vector<FSATableElement>& elements,
     }
     /* NFA */
     else{
-        fsa->initial = Change_to_string(elements[0].state);
-        fsa->initial = Check_epsilon(elements, elements[0].state);
-
-        for(int i = 0; i < elements.size(); i++){
-            if(elements[i].str.empty() == 0)
-                fsa->alpha.insert(elements[i].str);
+        for(int i = 0; i < storage.size(); i++){
+            // Initialize input list except epsilon.
+            if(storage[i].input != '0')
+                fsa->input_list.insert(storage[i].input);
         }
-        Make_nfa_table(elements, fsa);
+        Make_nfa_table(storage, fsa);
 
-        for(int i = 0; i < accept_states.size() - 1; i++)
+        // Initialize accept states.
+        for(int i = 0; i < accept_states.size(); i++)
             fsa->accept.push_back(accept_states[i]);
     }
+
     LOG << "num_elements: " << elements.size()
         << ", accept_states: " << accept_states.size() << endl;
+
     if(elements.size() <= 0)
         return false;
+
     return true;
 }
-std::string Check_epsilon(const std::vector<FSATableElement>& elements, int state){
-    stack<int> tempst;
-    set<int> visitable;
+/* This function makes cluster by finding epsilons in given state.*/
+std::string Check_epsilon(const std::vector<elem>& storage, int state){
+    stack<int> state_stack;
+    set<int> available_state;
     set<int>::iterator iter;
-    string tempstr;
-    int t, setsize;
+    string cluster;
+    int top,cluster_size;
 
+    // Initializing by given state.
+    state_stack.push(state);
+    available_state.insert(state);
 
-    tempst.push(state);
-    visitable.insert(state);
+    // Loop until finds every available states.
+    while(!state_stack.empty()){
+        top = state_stack.top();
+        state_stack.pop();
 
-    while(!tempst.empty()){
-        t = tempst.top();
-        tempst.pop();
+        for(int i = 0; i < storage.size(); i++){
+            // When finds epsilon.
+            if(storage[i].state == top && storage[i].input == 0){
+                cluster_size = available_state.size();
+                // Put available states by epsilon.
+                available_state.insert(storage[i].next_state);
 
-        for(int i = 0; i < elements.size(); i++){
-            if(elements[i].state == t && elements[i].str == ""){
-                setsize = visitable.size();
-                visitable.insert(elements[i].next_state);
-                if(visitable.size() != setsize)
-                    tempst.push(elements[i].next_state);
+                // When don't find every available states yet.
+                // Comparing two size to avoid pushing duplicated states. : set
+                if(available_state.size() != cluster_size)
+                    state_stack.push(storage[i].next_state);
             }
          }
      }
      
-     for(iter = visitable.begin(); iter != visitable.end(); iter++)
-         tempstr.append(Change_to_string(*iter));
+     // Append available states to cluster.
+     for(iter = available_state.begin(); iter != available_state.end(); iter++)
+         cluster.append(Change_to_string(*iter));
          
-     return tempstr;   
+     return cluster;   
 }
-std::string Check_input(const std::vector<FSATableElement>& elements, int state, string input){
-    string cur_state = Check_epsilon(elements, state);
-    string tempstr, tmpstr;
-    set<int> tempset;
+/* This function finds next pieces when current states and inputs are given. */
+std::string Check_next(const std::vector<elem>& storage, int state, char input){
+    string cur_state;
+    string next_cluster,next_string;
+    set<int> next_set;
     set<int>::iterator iter;
-    int num,next_state;
+    int cur_piece,next_state;
+
+    // First, find current state's cluster.
+    cur_state = Check_epsilon(storage, state);
 
     for(int i = 0; i < cur_state.size(); i++){
-        num = (int)(cur_state.at(i) = '0');
-        for(int j = 0; j < elements.size(); j++){
-            if(num == elements[j].state && input.compare(elements[j].str) == 0){
-                tempset.insert(elements[j].next_state);
+        // Split cluster in to pieces.
+        cur_piece = (int)(cur_state.at(i) - '0');
+        for(int j = 0; j < storage.size(); j++){
+            // Find next pieces and put those in to set. 
+            if(cur_piece == storage[j].state && input == storage[j].input){
+                next_set.insert(storage[j].next_state);
             }
         }
     }
 
-    for(iter = tempset.begin(); iter != tempset.end(); iter++){
-        tempstr = Check_epsilon(elements, *iter);
-        for(int j = 0; j < tempstr.size(); j++){
-            next_state = (int)(tempstr.at(j) - '0');
-            tempset.insert(next_state);
+    for(iter = next_set.begin(); iter != next_set.end(); iter++){
+        // Check if next pieces have epsilon.
+        next_cluster = Check_epsilon(storage, *iter);
+        // Spilit cluster in to pieces.
+        for(int i = 0; i < next_cluster.size(); i++){
+            next_state = (int)(next_cluster[i] - '0');
+            next_set.insert(next_state);
         }
     }
-    for(iter = tempset.begin(); iter != tempset.end(); iter++){
-        tmpstr.append(Change_to_string(*iter));
+    // Convert set to string
+    for(iter = next_set.begin(); iter != next_set.end(); iter++){
+        next_string.append(Change_to_string(*iter));
     }
-    return tmpstr;
+    return next_string;
 }
-std::string Check_state(const std::vector<FSATableElement>& elements, std::string state, std::string input){
-    int cur_state,next_state;
-    string next_state_str, visitable_str;
-    set<int> tempset;
+/* This function finds next states when current state and input are given. */
+std::string Find_next(const std::vector<elem>& storage, std::string state, char input){
+    int cur_piece,next_piece;
+    string next_cluster, next_string;
+    set<int> next_set;
     set<int>::iterator iter;
 
+    // Current state can be cluster.
+    // Split cluster in to pieces.
+    // Find all next states by changing current states.
     for(int i = 0; i < state.size(); i++){
-        cur_state = (int)(state.at(i) - '0');
-        next_state_str = Check_input(elements,cur_state,input);
+        cur_piece = (int)(state[i] - '0');
+        next_cluster = Check_next(storage,cur_piece,input);
 
-        for(int j = 0; j < next_state_str.size(); j++){
-            next_state = (int)(next_state_str.at(j) - '0');
-            tempset.insert(next_state);
+        // Next state can be cluster.
+        // Split cluster in to pieces.
+        // Then save them all in to set : set can avoid duplicated inputs/
+        for(int j = 0; j < next_cluster.size(); j++){
+            next_piece = (int)(next_cluster[j] - '0');
+            next_set.insert(next_piece);
         }
     }
-    for(iter = tempset.begin(); iter != tempset.end(); iter++)
-        visitable_str.append(Change_to_string(*iter));
+    // Convert all integers to string.
+    for(iter = next_set.begin(); iter != next_set.end(); iter++)
+        next_string.append(Change_to_string(*iter));
 
-    return visitable_str;
+    return next_string;
 }
-void Make_nfa_table(const std::vector<FSATableElement>& elements, FiniteStateAutomaton *fsa){
-    stack<string> tempst;
+/* This function makes NFA table */
+// Find transition and next stats.
+// Then put this pair(Transition + next states) in to map.
+void Make_nfa_table(const std::vector<elem>& storage, FiniteStateAutomaton *fsa){
+    stack<string> state_stack;
     set<char>::iterator iter;
     set<string> exist;
-    string cur_state = fsa->initial;
-    string tran_state, next_state;
+    // State starts with 1.
+    string cur_state = Change_to_string(1);
+    string transition,next_state;
 
-    tempst.push(cur_state);
+    state_stack.push(cur_state);
     exist.insert(cur_state);
 
-    while(!tempst.empty()){
-        cur_state = tempst.top();
+    while(!state_stack.empty()){
+        cur_state = state_stack.top();
 
-        tempst.pop();
-        for(iter = fsa->alpha.begin(); iter != fsa->alpha.end(); iter++){
-            next_state = Check_state(elements, cur_state, *iter);
-            tran_state = cur_state + *iter;
-            fsa->table.insert(map<string, string>::value_type(tran_state, next_state));
+        state_stack.pop();
+        for(iter = fsa->input_list.begin(); iter != fsa->input_list.end(); iter++){
+            /* Initialize transition and next state */
+            // transition = current state + input
+            // next state : Using another function. -> next state can be multiple
+            next_state = Find_next(storage,cur_state,*iter);
+            transition = cur_state + *iter;
 
+            // Put transition and next state in to fsa
+            fsa->table[transition] =  next_state;
+
+            // Loop until next state is not in exist and not same as current state(Recursive case)
             if(cur_state != next_state && exist.find(next_state) == exist.end()){
-                tempst.push(next_state);
+                state_stack.push(next_state);
                 exist.insert(next_state);
             }
         }
@@ -276,10 +311,12 @@ void Make_nfa_table(const std::vector<FSATableElement>& elements, FiniteStateAut
 /* This function change integer to string. */
 string Change_to_string(int num){
     string str;
-    char c;
+    char tmp_char;
 
-    c = (char)num + '0';
-    str = c;
+    // Change number to character.
+    tmp_char = (char)num + '0';
+    // Change character to string.
+    str = tmp_char;
 
     return str;
 }
