@@ -19,9 +19,14 @@ struct FSATableElement {
   std::string str;
 };
 
+struct elem{
+  int state;
+  int next_state;
+  char input;
+}
+
 struct FiniteStateAutomaton {
   // Make your own FSA struct here.
-  std::string initial;
   std::vector<int> accept;
   std::set<char> alpha;
   std::map<std::string, std::string> table;

@@ -13,7 +13,42 @@ using namespace std;
 
 bool RunFSA(const FiniteStateAutomaton& fsa, const string& str) {
   // Implement this function.
+  map<string, string>::iterator iter;
+  string transition,isfinal;
+  int index = 0;
+  char input = str[0];
 
+  // Start state : 1
+  string cur_state = Change_to_string(1);
+
+  while(str[index] != '\0'){
+        // Create transition : cur_state + input
+        transition = cur_state + input;
+        // Find if tansition is in table.
+        iter = fsa->table.find(transition);
+
+        if(iter != fsa->table.end())
+            // When find transition. change current state.
+            cur_state = iter->second;
+        else
+            // When can't find transition.
+            return false;
+
+        index++;
+        // Reinitialize input.
+        input = str[index];
+  }
+  // When inputs end, check current state is in accept states.
+  isfinal = cur_state;
+
+  for(int i = 0; i < fsa->accept.size(); i++){
+        for(int j = 0; j < isfinal.size(); j++){
+            if(fsa->accept[i] == (int)(isfinal[j]-'0'))
+                return true;
+        }
+  }
+
+  return false;
 }
 
 bool BuildFSA(const std::vector<FSATableElement>& elements,
@@ -21,25 +56,94 @@ bool BuildFSA(const std::vector<FSATableElement>& elements,
               FiniteStateAutomaton* fsa) {
     // Implement this function. 
     std::vector<FSATableElement>::const_iterator elem_iter;
+    std::vector<elem> storage;
     int nfa = 0;
 
+    /* Converse string input to char input */
+    // Tricky case : input - "ab"
+    // Split in to "a" and "b"
     for(elem_iter = elements.begin(); elem_iter != elements.end(); elem_iter++){
-        if(elem_iter->str.empty() == 1){
+        elem new_elem;
+
+        new_elem.state = elem_iter->state;
+        new_elem.next_state = elem_iter->next_state;
+        // Multiple input
+        if(elem_iter->str.size() > 1){
+            for(int i = 0; i < str.size(); i++){
+                char tmp = elem_iter->str[i];
+
+                if(i == 0){
+                    new_elem.input = tmp;   
+                }
+                else{
+                    elem tmp_elem;
+                    
+                    tmp_elem.state = elem_iter->state;
+                    tmp_elem.next_state = elem_iter->state;
+                    tmp_elem.input = tmp;
+
+                    storage.push_back(tmp_elem);
+                }
+            }
+            storage.push_back(new_elem);
+        }
+        // Epsilon
+        else if(elem_iter->str.size() == 0{
+            new_elem.input = ''; 
+
+            storage.push_back(new_elem);
+        }
+        // Normal input
+        else{
+            char tmp = elem_iter[0];
+
+            new_elem.input = tmp;
+
+            storage.push_back(new_elem);
+        }
+    }
+    
+    /* Decide whether it's NFA or DFA */
+
+    // When epsilon appears.
+    for(int i = 0; i < storage.size(); i++){
+        if(storage[i].input == ''){
             nfa = 1;
             break;
         }
     }
+    // When one state has two or more next_state.
+    for(int i = 0; i < storage.size(); i++){
+        for(int j = i+1; j < storage.size; j++){
+            // Same current state, same input.
+            if(storage[i].state == storage[j].state && storage[i].input == storage[j].input){
+                nfa = 1;
+                break;
+            }
+        }
+        if(nfa)
+            break;
+    }
+
+    /* Build the fsa */
+
     /* DFA*/
     if(!nfa){
         string transition, next;
 
-        fsa->initial = Change_to_string(elements[0].state);
+        // Initial state : 1
+        fsa->initial = Change_to_string(1);
 
-        for(int i = 0; i < elements.size(); i++){
-            transition = Change_to_string(elements[i].state) + elements[i].str;
+        // Put current state + input and next staet
+        // (String) transition = current state + input
+        // (String) next = next state
+        for(int i = 0; i < storage.size(); i++){
+            transition = Change_to_string(storage[i].state) + storage[i].input;
             next = Change_to_string(elements[i].next_state);
-            fsa->table.insert(map<string, string>::value_type(transition, next));
+            fsa->table[transition] =  next;
         }
+
+        // Put accept states.
         for(int i = 0; i < accept_states.size(); i++){
             fsa->accept.push_back(accept_states[i]);
         }
@@ -169,12 +273,13 @@ void Make_nfa_table(const std::vector<FSATableElement>& elements, FiniteStateAut
         }
     }
 }
+/* This function change integer to string. */
 string Change_to_string(int num){
-    string tempstr;
-    char tempchar;
+    string str;
+    char c;
 
-    tempchar = (char)num + '0';
-    tempstr = tempchar;
+    c = (char)num + '0';
+    str = c;
 
-    return tempstr;
+    return str;
 }
