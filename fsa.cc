@@ -193,7 +193,7 @@ std::string Check_epsilon(const std::vector<elem>& storage, int state){
                 // Put available states by epsilon.
                 available_state.insert(storage[i].next_state);
 
-                // When don't find every available states yet.
+                // When can't find every available states yet.
                 // Comparing two size to avoid pushing duplicated states. : set
                 if(available_state.size() != cluster_size)
                     state_stack.push(storage[i].next_state);

@@ -81,7 +81,8 @@ bool RunLRParser(const LRParser& lr_parser, const std::string& str) {
             // Push : LHS
             lr_stack.push(lr_parser.rules[next.second -1].lhs_symbol);
 
-            if(go_to.first == INVALID)
+            // If it's not goto action, return false.
+            if(go_to.first != GOTO)
                  return false;
 
             // Push : state from goto table
