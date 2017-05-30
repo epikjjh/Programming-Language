@@ -1,6 +1,7 @@
 // PL homework: hw2
 // regexp_matcher.cc
 
+#include <iostream>
 #include "regexp_matcher.h"
 
 using namespace std;
@@ -11,7 +12,6 @@ bool BuildRegExpMatcher(const char* regexp, RegExpMatcher* regexp_matcher) {
     vector<int> accept_states;
 
     /* Convert regular expression to NFA */
-
 
 
 
