@@ -86,7 +86,7 @@ bool BuildRegExpMatcher(const char* regexp, RegExpMatcher* regexp_matcher) {
                 index++;
 
                 while(regexp[index] != ')'){
-                    input += regexp[index]
+                    input += regexp[index];
 
                     index++;
                 }
@@ -111,7 +111,7 @@ bool BuildRegExpMatcher(const char* regexp, RegExpMatcher* regexp_matcher) {
                 
                 // Save input in to input list
                 if(input.size() == 1)
-                    input_list.insert(input);
+                    input_list.insert(input[0]);
 
                 input.clear();
 
