@@ -13,6 +13,7 @@ bool BuildRegExpMatcher(const char* regexp, RegExpMatcher* regexp_matcher) {
     int next_state = cur_state + 1;
     int index = 0;
     vector<int> accept_states;
+    set<char> input_list;
 
     /* Convert regular expression to NFA */
     // Single characters  - ex) abc
@@ -28,11 +29,27 @@ bool BuildRegExpMatcher(const char* regexp, RegExpMatcher* regexp_matcher) {
         switch(regexp[index]){
             /* Any character */
             case('.') :
+                new_elem.state = cur_state;
+                new_elem.next_state = next_state;
+                new_elem.input = '.';
 
                 break;
 
             /* Set of characters */
             case('[') :
+                index++;
+
+                while(regexp[index] != ']'){
+                    new_elem.state = cur_state;
+                    new_elem.next_state = next_state;
+                    new_elem.input = regexp[index];
+                    
+                    index++;
+
+                    regexp_matcher->storage.push_back(new_elem);
+                }
+                cur_state++;
+                next_state++;
 
                 break;
             case(']') :
@@ -67,8 +84,12 @@ bool BuildRegExpMatcher(const char* regexp, RegExpMatcher* regexp_matcher) {
                 cur_state++;
                 next_state++;
                 index++;
-                        
+                       
+                // Store 
                 regexp_matcher->storage.push_back(new_elem);
+                
+                // Save input in to input list
+                input_list.insert(regexp[index]);
 
                 break;
         }
