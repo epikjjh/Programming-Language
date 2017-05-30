@@ -3,12 +3,9 @@
 
 #include "regexp_matcher.h"
 
-using namespace std;
-
 bool BuildRegExpMatcher(const char* regexp, RegExpMatcher* regexp_matcher) {
     // Implement this function. 
     int nfa = 0;
-    vector<int> accept_states;
 
     /* Convert regular expression to NFA */
 
@@ -20,17 +17,17 @@ bool BuildRegExpMatcher(const char* regexp, RegExpMatcher* regexp_matcher) {
     /* Decide whether it's NFA or DFA */
 
     // When epsilon appears.
-    for(int i = 0; i < regexp_matcher->storage.size(); i++){
-        if(regexp_matcher->storage[i].input == 0){
+    for(int i = 0; i < storage.size(); i++){
+        if(storage[i].input == 0){
             nfa = 1;
             break;
         }
     }
     // When one state has two or more next_state.
-    for(int i = 0; i < regexp_matcher->storage.size(); i++){
-        for(int j = i+1; j < regexp_matcher->storage.size(); j++){
+    for(int i = 0; i < storage.size(); i++){
+        for(int j = i+1; j < storage.size(); j++){
             // Same current state, same input.
-            if(regexp_matcher->storage[i].state == regexp_matcher->storage[j].state && regexp_matcher->storage[i].input == regexp_matcher->storage[j].input){
+            if(storage[i].state == storage[j].state && storage[i].input == storage[j].input){
                 nfa = 1;
                 break;
             }
@@ -48,30 +45,30 @@ bool BuildRegExpMatcher(const char* regexp, RegExpMatcher* regexp_matcher) {
         // Put current state + input and next staet
         // (String) transition = current state + input
         // (String) next = next state
-        for(int i = 0; i < regexp_matcher->storage.size(); i++){
-            transition = Integer_to_string(regexp_matcher->storage[i].state) + regexp_matcher->storage[i].input;
-            next = Integer_to_string(regexp_matcher->storage[i].next_state);
-            regexp_matcher->fsa.table[transition] =  next;
+        for(int i = 0; i < storage.size(); i++){
+            transition = Change_to_string(storage[i].state) + storage[i].input;
+            next = Change_to_string(elements[i].next_state);
+            fsa->table[transition] =  next;
         }
 
         // Put accept states.
         for(int i = 0; i < accept_states.size(); i++){
-            regexp_matcher->fsa.accept.push_back(accept_states[i]);
+            fsa->accept.push_back(accept_states[i]);
         }
 
     }
     /* NFA */
     else{
-        for(int i = 0; i < regexp_matcher->storage.size(); i++){
+        for(int i = 0; i < storage.size(); i++){
             // Initialize input list except epsilon.
-            if(regexp_matcher->storage[i].input != '0')
-                regexp_matcher->fsa.input_list.insert(regexp_matcher->storage[i].input);
+            if(storage[i].input != '0')
+                fsa->input_list.insert(storage[i].input);
         }
-        Make_nfa_table(regexp_matcher);
+        Make_nfa_table(storage, fsa);
 
         // Initialize accept states.
         for(int i = 0; i < accept_states.size(); i++)
-            regexp_matcher->fsa.accept.push_back(accept_states[i]);
+            fsa->accept.push_back(accept_states[i]);
     }
 
     return false;
@@ -85,16 +82,16 @@ bool RunRegExpMatcher(const RegExpMatcher& regexp_matcher, const char* str) {
   char input = str[0];
 
   // Start state : 1
-  string cur_state = Integer_to_string(1);
+  string cur_state = Change_to_string(1);
 
   // Loop until input string ends.
   while(str[index] != '\0'){
         // Create transition : cur_state + input
         transition = cur_state + input;
         // Find if tansition is in table.
-        iter = (regexp_matcher.fsa.table).find(transition);
+        iter = (fsa.table).find(transition);
 
-        if(iter != regexp_matcher.fsa.table.end())
+        if(iter != fsa.table.end())
             // When find transition. change current state.
             cur_state = iter->second;
         else
@@ -108,16 +105,16 @@ bool RunRegExpMatcher(const RegExpMatcher& regexp_matcher, const char* str) {
   // When inputs end, check current state is in accept states.
   isfinal = cur_state;
 
-  for(int i = 0; i < regexp_matcher.fsa.accept.size(); i++){
+  for(int i = 0; i < fsa.accept.size(); i++){
         for(int j = 0; j < isfinal.size(); j++){
-            if(regexp_matcher.fsa.accept[i] == (int)(isfinal[j]-'0'))
+            if(fsa.accept[i] == (int)(isfinal[j]-'0'))
                 return true;
         }
   }
   return false;
 }
 /* This function makes cluster by finding epsilons in given state.*/
-std::string Check_epsilon(const RegExpMatcher& regexp_matcher, int state){
+std::string Check_epsilon(const std::vector<elem>& storage, int state){
     stack<int> state_stack;
     set<int> available_state;
     set<int>::iterator iter;
@@ -133,29 +130,29 @@ std::string Check_epsilon(const RegExpMatcher& regexp_matcher, int state){
         top = state_stack.top();
         state_stack.pop();
 
-        for(int i = 0; i < regexp_matcher.storage.size(); i++){
+        for(int i = 0; i < storage.size(); i++){
             // When finds epsilon.
-            if(regexp_matcher.storage[i].state == top && regexp_matcher.storage[i].input == 0){
+            if(storage[i].state == top && storage[i].input == 0){
                 cluster_size = available_state.size();
                 // Put available states by epsilon.
-                available_state.insert(regexp_matcher.storage[i].next_state);
+                available_state.insert(storage[i].next_state);
 
                 // When can't find every available states yet.
                 // Comparing two size to avoid pushing duplicated states. : set
                 if(available_state.size() != cluster_size)
-                    state_stack.push(regexp_matcher.storage[i].next_state);
+                    state_stack.push(storage[i].next_state);
             }
          }
      }
      
      // Append available states to cluster.
      for(iter = available_state.begin(); iter != available_state.end(); iter++)
-         cluster.append(Integer_to_string(*iter));
+         cluster.append(Change_to_string(*iter));
          
      return cluster;   
 }
 /* This function finds next pieces when current states and inputs are given. */
-std::string Check_next(const RegExpMatcher& regexp_matcher, int state, char input){
+std::string Check_next(const std::vector<elem>& storage, int state, char input){
     string cur_state;
     string next_cluster,next_string;
     set<int> next_set;
@@ -163,22 +160,22 @@ std::string Check_next(const RegExpMatcher& regexp_matcher, int state, char inpu
     int cur_piece,next_state;
 
     // First, find current state's cluster.
-    cur_state = Check_epsilon(regexp_matcher, state);
+    cur_state = Check_epsilon(storage, state);
 
     for(int i = 0; i < cur_state.size(); i++){
         // Split cluster in to pieces.
         cur_piece = (int)(cur_state.at(i) - '0');
-        for(int j = 0; j < regexp_matcher.storage.size(); j++){
+        for(int j = 0; j < storage.size(); j++){
             // Find next pieces and put those in to set. 
-            if(cur_piece == regexp_matcher.storage[j].state && input == regexp_matcher.storage[j].input){
-                next_set.insert(regexp_matcher.storage[j].next_state);
+            if(cur_piece == storage[j].state && input == storage[j].input){
+                next_set.insert(storage[j].next_state);
             }
         }
     }
 
     for(iter = next_set.begin(); iter != next_set.end(); iter++){
         // Check if next pieces have epsilon.
-        next_cluster = Check_epsilon(regexp_matcher, *iter);
+        next_cluster = Check_epsilon(storage, *iter);
         // Spilit cluster in to pieces.
         for(int i = 0; i < next_cluster.size(); i++){
             next_state = (int)(next_cluster[i] - '0');
@@ -187,12 +184,12 @@ std::string Check_next(const RegExpMatcher& regexp_matcher, int state, char inpu
     }
     // Convert set to string
     for(iter = next_set.begin(); iter != next_set.end(); iter++){
-        next_string.append(Integer_to_string(*iter));
+        next_string.append(Change_to_string(*iter));
     }
     return next_string;
 }
 /* This function finds next states when current state and input are given. */
-std::string Find_next(const RegExpMatcher& regexp_matcher, std::string state, char input){
+std::string Find_next(const std::vector<elem>& storage, std::string state, char input){
     int cur_piece,next_piece;
     string next_cluster, next_string;
     set<int> next_set;
@@ -203,7 +200,7 @@ std::string Find_next(const RegExpMatcher& regexp_matcher, std::string state, ch
     // Find all next states by changing current states.
     for(int i = 0; i < state.size(); i++){
         cur_piece = (int)(state[i] - '0');
-        next_cluster = Check_next(regexp_matcher,cur_piece,input);
+        next_cluster = Check_next(storage,cur_piece,input);
 
         // Next state can be cluster.
         // Split cluster in to pieces.
@@ -215,7 +212,7 @@ std::string Find_next(const RegExpMatcher& regexp_matcher, std::string state, ch
     }
     // Convert all integers to string.
     for(iter = next_set.begin(); iter != next_set.end(); iter++)
-        next_string.append(Integer_to_string(*iter));
+        next_string.append(Change_to_string(*iter));
 
     return next_string;
 }
@@ -227,7 +224,7 @@ void Make_nfa_table(RegExpMatcher *regexp_matcher){
     set<char>::iterator iter;
     set<string> exist;
     // State starts with 1.
-    string cur_state = Integer_to_string(1);
+    string cur_state = Change_to_string(1);
     string transition,next_state;
 
     state_stack.push(cur_state);
@@ -237,15 +234,15 @@ void Make_nfa_table(RegExpMatcher *regexp_matcher){
         cur_state = state_stack.top();
 
         state_stack.pop();
-        for(iter = regexp_matcher->fsa.input_list.begin(); iter != regexp_matcher->fsa.input_list.end(); iter++){
+        for(iter = RegExpMatcher->fsa.input_list.begin(); iter != fsa->input_list.end(); iter++){
             /* Initialize transition and next state */
             // transition = current state + input
             // next state : Using another function. -> next state can be multiple
-            next_state = Find_next(*regexp_matcher,cur_state,*iter);
+            next_state = Find_next(storage,cur_state,*iter);
             transition = cur_state + *iter;
 
             // Put transition and next state in to fsa
-            regexp_matcher->fsa.table[transition] =  next_state;
+            fsa->table[transition] =  next_state;
 
             // Loop until next state is not in exist and not same as current state(Recursive case)
             if(cur_state != next_state && exist.find(next_state) == exist.end()){
@@ -256,7 +253,7 @@ void Make_nfa_table(RegExpMatcher *regexp_matcher){
     }
 }
 /* This function change integer to string. */
-string Integer_to_string(int num){
+string Change_to_string(int num){
     string str;
     char tmp_char;
 

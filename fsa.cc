@@ -137,7 +137,7 @@ bool BuildFSA(const std::vector<FSATableElement>& elements,
         // (String) next = next state
         for(int i = 0; i < storage.size(); i++){
             transition = Change_to_string(storage[i].state) + storage[i].input;
-            next = Change_to_string(elements[i].next_state);
+            next = Change_to_string(storage[i].next_state);
             fsa->table[transition] =  next;
         }
 
