@@ -41,6 +41,7 @@ bool BuildRegExpMatcher(const char* regexp, RegExpMatcher* regexp_matcher) {
             
             /* OR */
             case('|') :
+                Check_or(regexp,regexp_matcher,&cur_state,&next_state,&index);
 
                 break;
 
@@ -324,4 +325,77 @@ string Integer_to_string(int num){
     str = tmp_char;
 
     return str;
+}
+void Check_or(const char *regexp, RegExpMatcher *regexp_matcher, int *cur_state, int *next_state, int *index){
+    char save_before;
+
+    // Transform former element.
+    for(int i = 0; i < regexp_matcher->storage.size(); i++){
+        if(regexp_matcher->storage[i].next_state == (*cur_state)){
+            elem before_epsilon;
+
+            // Create element(Before epsilon)
+            before_epsilon.state = regexp_matcher->storage[i].state;
+            before_epsilon.input = 0;
+            before_epsilon.next_state = (*next_state) + 1;
+
+            // Store
+            regexp_matcher->storage.push_back(before_epsilon);
+
+            // Save elements' input.
+            save_before = regexp_matcher->storage[i].input;
+            regexp_matcher->storage[i].input = 0;
+            break;
+        }
+    }
+    // Create element(Before |)
+    elem before;
+                
+    before.state = (*cur_state);
+    before.next_state = (*next_state);
+    before.input = save_before;
+
+    // Store
+    regexp_matcher->storage.push_back(before);
+
+    (*cur_state) += 2;
+    (*next_state) += 2;
+
+    // Create element(After |)
+    elem after;
+
+    after.state = (*cur_state);
+    after.next_state = (*next_state);
+    after.input = regexp[(*index)+1];
+
+    // Store
+    regexp_matcher->storage.push_back(after);
+
+    (*cur_state)++;
+    (*next_state)++;
+
+    // Create element(After epsilon 1)
+    elem after_epsilon_1;
+
+    after_epsilon_1.state = (*cur_state);
+    after_epsilon_1.next_state = (*next_state);
+    after_epsilon_1.input = 0;
+
+    // Store
+    regexp_matcher->storage.push_back(after_epsilon_1);
+
+    // Create element(After epsilon 2)
+    elem after_epsilon_2;
+
+    after_epsilon_2.state = before.next_state;
+    after_epsilon_2.next_state = (*next_state);
+    after_epsilon_2.input = 0;
+
+    // Store
+    regexp_matcher->storage.push_back(after_epsilon_2);
+
+    (*cur_state)++;
+    (*next_state)++;
+
+    (*index) += 2;
 }
