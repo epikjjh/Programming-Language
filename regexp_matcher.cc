@@ -31,7 +31,7 @@ bool BuildRegExpMatcher(const char* regexp, RegExpMatcher* regexp_matcher) {
             case('.') :
                 new_elem.state = cur_state;
                 new_elem.next_state = next_state;
-                new_elem.input = '.';
+                new_elem.input = ".";
 
                 break;
 
@@ -97,20 +97,64 @@ bool BuildRegExpMatcher(const char* regexp, RegExpMatcher* regexp_matcher) {
 
     accept_states.push_back(cur_state);
 
+    /* Convert string input to char input */
+    // Tricky case : input - "ab"
+    // Split in to "a" and "b"
+    for(int i = 0; i < regexp_matcher->storage.size(); i++){
+        elem_char new_elem;
+
+        new_elem.state = regexp_matcher->storage[i].state;
+        new_elem.next_state = regexp_matcher->storage[i].next_state;
+        // Multiple input
+        if(regexp_matcher->storage[i].input.size() > 1){
+            for(int j = 0; i < regexp_matcher->storage[i].input.size(); j++){
+                char tmp = regexp_matcher->storage[i].input[j];
+
+                if(j == 0){
+                    new_elem.input = tmp;   
+                }
+                else{
+                    elem_char tmp_elem;
+                    
+                    tmp_elem.state = regexp_matcher->storage[i].state;
+                    tmp_elem.next_state = regexp_matcher->storage[i].next_state;
+                    tmp_elem.input = tmp;
+
+                    regexp_matcher->garage.push_back(tmp_elem);
+                }
+            }
+            regexp_matcher->garage.push_back(new_elem);
+        }
+        // Epsilon
+        else if(regexp_matcher->storage[i].input.empty() == 1){
+            new_elem.input = 0; 
+
+            regexp_matcher->garage.push_back(new_elem);
+        }
+        // Normal input
+        else{
+            char tmp = regexp_matcher->storage[i].input[0];
+
+            new_elem.input = tmp;
+
+            regexp_matcher->garage.push_back(new_elem);
+        }
+    }
+
     /* Decide whether it's NFA or DFA */
 
     // When epsilon appears.
-    for(int i = 0; i < regexp_matcher->storage.size(); i++){
-        if(regexp_matcher->storage[i].input == 0){
+    for(int i = 0; i < regexp_matcher->garage.size(); i++){
+        if(regexp_matcher->garage[i].input == 0){
             nfa = 1;
             break;
         }
     }
     // When one state has two or more next_state.
-    for(int i = 0; i < regexp_matcher->storage.size(); i++){
-        for(int j = i+1; j < regexp_matcher->storage.size(); j++){
+    for(int i = 0; i < regexp_matcher->garage.size(); i++){
+        for(int j = i+1; j < regexp_matcher->garage.size(); j++){
             // Same current state, same input.
-            if(regexp_matcher->storage[i].state == regexp_matcher->storage[j].state && regexp_matcher->storage[i].input == regexp_matcher->storage[j].input){
+            if(regexp_matcher->garage[i].state == regexp_matcher->garage[j].state && regexp_matcher->garage[i].input == regexp_matcher->garage[j].input){
                 nfa = 1;
                 break;
             }
@@ -128,9 +172,9 @@ bool BuildRegExpMatcher(const char* regexp, RegExpMatcher* regexp_matcher) {
         // Put current state + input and next staet
         // (String) transition = current state + input
         // (String) next = next state
-        for(int i = 0; i < regexp_matcher->storage.size(); i++){
-            transition = Integer_to_string(regexp_matcher->storage[i].state) + regexp_matcher->storage[i].input;
-            next = Integer_to_string(regexp_matcher->storage[i].next_state);
+        for(int i = 0; i < regexp_matcher->garage.size(); i++){
+            transition = Integer_to_string(regexp_matcher->garage[i].state) + regexp_matcher->garage[i].input;
+            next = Integer_to_string(regexp_matcher->garage[i].next_state);
             regexp_matcher->fsa.table[transition] =  next;
         }
 
@@ -142,10 +186,10 @@ bool BuildRegExpMatcher(const char* regexp, RegExpMatcher* regexp_matcher) {
     }
     /* NFA */
     else{
-        for(int i = 0; i < regexp_matcher->storage.size(); i++){
+        for(int i = 0; i < regexp_matcher->garage.size(); i++){
             // Initialize input list except epsilon.
-            if(regexp_matcher->storage[i].input != '0')
-                regexp_matcher->fsa.input_list.insert(regexp_matcher->storage[i].input);
+            if(regexp_matcher->garage[i].input != '0')
+                regexp_matcher->fsa.input_list.insert(regexp_matcher->garage[i].input);
         }
         Make_nfa_table(regexp_matcher);
 
@@ -213,17 +257,17 @@ std::string Check_epsilon(const RegExpMatcher& regexp_matcher, int state){
         top = state_stack.top();
         state_stack.pop();
 
-        for(int i = 0; i < regexp_matcher.storage.size(); i++){
+        for(int i = 0; i < regexp_matcher.garage.size(); i++){
             // When finds epsilon.
-            if(regexp_matcher.storage[i].state == top && regexp_matcher.storage[i].input == 0){
+            if(regexp_matcher.garage[i].state == top && regexp_matcher.garage[i].input == 0){
                 cluster_size = available_state.size();
                 // Put available states by epsilon.
-                available_state.insert(regexp_matcher.storage[i].next_state);
+                available_state.insert(regexp_matcher.garage[i].next_state);
 
                 // When can't find every available states yet.
                 // Comparing two size to avoid pushing duplicated states. : set
                 if(available_state.size() != cluster_size)
-                    state_stack.push(regexp_matcher.storage[i].next_state);
+                    state_stack.push(regexp_matcher.garage[i].next_state);
             }
          }
      }
@@ -248,10 +292,10 @@ std::string Check_next(const RegExpMatcher& regexp_matcher, int state, char inpu
     for(int i = 0; i < cur_state.size(); i++){
         // Split cluster in to pieces.
         cur_piece = (int)(cur_state.at(i) - '0');
-        for(int j = 0; j < regexp_matcher.storage.size(); j++){
+        for(int j = 0; j < regexp_matcher.garage.size(); j++){
             // Find next pieces and put those in to set. 
-            if(cur_piece == regexp_matcher.storage[j].state && input == regexp_matcher.storage[j].input){
-                next_set.insert(regexp_matcher.storage[j].next_state);
+            if(cur_piece == regexp_matcher.garage[j].state && input == regexp_matcher.garage[j].input){
+                next_set.insert(regexp_matcher.garage[j].next_state);
             }
         }
     }
@@ -348,7 +392,7 @@ string Integer_to_string(int num){
     return str;
 }
 void Check_or(const char *regexp, RegExpMatcher *regexp_matcher, int *cur_state, int *next_state, int *index){
-    char save_before;
+    string save_before;
 
     // Transform former element.
     for(int i = 0; i < regexp_matcher->storage.size(); i++){
@@ -357,7 +401,7 @@ void Check_or(const char *regexp, RegExpMatcher *regexp_matcher, int *cur_state,
 
             // Create element(Before epsilon)
             before_epsilon.state = regexp_matcher->storage[i].state;
-            before_epsilon.input = 0;
+            before_epsilon.input = "";
             before_epsilon.next_state = (*next_state) + 1;
 
             // Store
@@ -365,7 +409,7 @@ void Check_or(const char *regexp, RegExpMatcher *regexp_matcher, int *cur_state,
 
             // Save elements' input.
             save_before = regexp_matcher->storage[i].input;
-            regexp_matcher->storage[i].input = 0;
+            regexp_matcher->storage[i].input = "";
             break;
         }
     }
@@ -400,7 +444,7 @@ void Check_or(const char *regexp, RegExpMatcher *regexp_matcher, int *cur_state,
 
     after_epsilon_1.state = (*cur_state);
     after_epsilon_1.next_state = (*next_state);
-    after_epsilon_1.input = 0;
+    after_epsilon_1.input = "";
 
     // Store
     regexp_matcher->storage.push_back(after_epsilon_1);
@@ -410,7 +454,7 @@ void Check_or(const char *regexp, RegExpMatcher *regexp_matcher, int *cur_state,
 
     after_epsilon_2.state = before.next_state;
     after_epsilon_2.next_state = (*next_state);
-    after_epsilon_2.input = 0;
+    after_epsilon_2.input = "";
 
     // Store
     regexp_matcher->storage.push_back(after_epsilon_2);

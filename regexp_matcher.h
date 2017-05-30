@@ -12,6 +12,11 @@
 struct elem{
     int state;
     int next_state;
+    std::string input;
+};
+struct elem_char{
+    int state;
+    int next_state;
     char input;
 };
 struct FiniteStateAutomaton{
@@ -23,6 +28,7 @@ struct FiniteStateAutomaton{
 struct RegExpMatcher {
   // Design your RegExpMatcher structure.
   std::vector<elem> storage;
+  std::vector<elem_char> garage;
   FiniteStateAutomaton fsa;
 };
 
