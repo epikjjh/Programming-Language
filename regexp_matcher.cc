@@ -14,6 +14,10 @@ bool BuildRegExpMatcher(const char* regexp, RegExpMatcher* regexp_matcher) {
     int index = 0;
     vector<int> accept_states;
     set<char> input_list;
+    set<char>::iterator input_iter;
+    string input;
+
+    input.clear();
 
     /* Convert regular expression to NFA */
     // Single characters  - ex) abc
@@ -26,12 +30,18 @@ bool BuildRegExpMatcher(const char* regexp, RegExpMatcher* regexp_matcher) {
     while(regexp[index] != '\0'){
         elem new_elem;
 
+        // Reset input
+        if(input.size() == 0)
+            input = regexp[index];
+
         switch(regexp[index]){
             /* Any character */
             case('.') :
                 new_elem.state = cur_state;
                 new_elem.next_state = next_state;
                 new_elem.input = ".";
+
+                index++;
 
                 break;
 
@@ -60,15 +70,26 @@ bool BuildRegExpMatcher(const char* regexp, RegExpMatcher* regexp_matcher) {
             case('|') :
                 Check_or(regexp,regexp_matcher,&cur_state,&next_state,&index);
 
+                input.clear();
                 break;
 
             /* Zero or more repition */
             case('*') :
 
+
+
+                input.clear();
                 break;
 
             /* Group */
             case('(') :
+                index++;
+
+                while(regexp[index] != ')'){
+                    input += regexp[index]
+
+                    index++;
+                }
 
                 break;
             case(')') :
@@ -79,7 +100,7 @@ bool BuildRegExpMatcher(const char* regexp, RegExpMatcher* regexp_matcher) {
             default :
                 new_elem.state = cur_state; 
                 new_elem.next_state = next_state;
-                new_elem.input = regexp[index];
+                new_elem.input = input;
 
                 cur_state++;
                 next_state++;
@@ -89,13 +110,31 @@ bool BuildRegExpMatcher(const char* regexp, RegExpMatcher* regexp_matcher) {
                 regexp_matcher->storage.push_back(new_elem);
                 
                 // Save input in to input list
-                input_list.insert(regexp[index]);
+                if(input.size() == 1)
+                    input_list.insert(input);
+
+                input.clear();
 
                 break;
         }
     }
 
     accept_states.push_back(cur_state);
+
+    /* Setting inputs for "." case*/
+    for(int i = 0; i < regexp_matcher->storage.size(); i++){
+        if(regexp_matcher->storage[i].input == "."){
+            // Erase "."
+            regexp_matcher->storage[i].input.clear();
+
+            for(input_iter = input_list.begin(); input_iter != input_list.end(); input_iter++){
+                string tmp;
+
+                tmp = *input_iter;
+                regexp_matcher->storage[i].input.append(tmp);
+            }
+        }
+    }
 
     /* Convert string input to char input */
     // Tricky case : input - "ab"
