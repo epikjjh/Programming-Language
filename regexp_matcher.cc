@@ -9,13 +9,71 @@ using namespace std;
 bool BuildRegExpMatcher(const char* regexp, RegExpMatcher* regexp_matcher) {
     // Implement this function. 
     int nfa = 0;
+    int cur_state = 1;
+    int next_state = cur_state + 1;
+    int index = 0;
     vector<int> accept_states;
 
     /* Convert regular expression to NFA */
+    // Single characters  - ex) abc
+    // Any character .
+    // Set of characters [] - ex) [abc]
+    // OR | - ex) a|b
+    // Zero or more repitition * - ex) a*
+    // Group () - ex) (abc)
 
+    while(regexp[index] != '\0'){
+        elem new_elem;
 
+        switch(regexp[index]){
+            /* Any character */
+            case('.') :
 
-////
+                break;
+
+            /* Set of characters */
+            case('[') :
+
+                break;
+            case(']') :
+                index++;
+                break;
+            
+            /* OR */
+            case('|') :
+
+                break;
+
+            /* Zero or more repition */
+            case('*') :
+
+                break;
+
+            /* Group */
+            case('(') :
+
+                break;
+            case(')') :
+                index++;
+                break;
+
+            /* Normal character input */
+            default :
+                new_elem.state = cur_state; 
+                new_elem.next_state = next_state;
+                new_elem.input = regexp[index];
+
+                cur_state++;
+                next_state++;
+                index++;
+                        
+                regexp_matcher->storage.push_back(new_elem);
+
+                break;
+        }
+    }
+
+    accept_states.push_back(cur_state);
 
     /* Decide whether it's NFA or DFA */
 
@@ -74,7 +132,7 @@ bool BuildRegExpMatcher(const char* regexp, RegExpMatcher* regexp_matcher) {
             regexp_matcher->fsa.accept.push_back(accept_states[i]);
     }
 
-    return false;
+    return true;
 }
 
 bool RunRegExpMatcher(const RegExpMatcher& regexp_matcher, const char* str) {
