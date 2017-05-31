@@ -43,6 +43,6 @@ std::string Find_next(const RegExpMatcher& regexp_matcher, std::string state, ch
 void Make_nfa_table(RegExpMatcher *regexp_matcher);
 std::string Integer_to_string(int num);
 void Check_or(const char *regexp, RegExpMatcher *regexp_matcher, int *cur_state, int *next_state, int *index);
-
+void Check_star(const char *regexp, RegExpMatcher *regexp_matcher, int *cur_state, int *next_state, int *index, std::vector<int> *accept_states);
 #endif  //_PL_HOMEWORK_REGEXP_MATCHER_H_
 

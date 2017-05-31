@@ -75,9 +75,7 @@ bool BuildRegExpMatcher(const char* regexp, RegExpMatcher* regexp_matcher) {
 
             /* Zero or more repition */
             case('*') :
-
-
-
+                Check_star(regexp,regexp_matcher,&cur_state,&next_state,&index,&accept_states);
                 input.clear();
                 break;
 
@@ -502,4 +500,88 @@ void Check_or(const char *regexp, RegExpMatcher *regexp_matcher, int *cur_state,
     (*next_state)++;
 
     (*index) += 2;
+}
+void Check_star(const char *regexp, RegExpMatcher *regexp_matcher, int *cur_state, int *next_state, int *index, vector<int> *accept_states){
+    string save_before;
+    int jump_after_cur,jump_after_next,jump_before_cur,jump_before_next;
+    set<int> finals;
+    set<int>::iterator iter;
+
+    // Transform former element.
+    for(int i = 0; i < regexp_matcher->storage.size(); i++){
+        if(regexp_matcher->storage[i].next_state == (*cur_state)){
+            // Save elements' input.
+            save_before = regexp_matcher->storage[i].input;
+            // Save jumping epsilon's sate(jump after)
+            jump_after_next = regexp_matcher->storage[i].state;
+            regexp_matcher->storage[i].input = "";
+            // Save accept state
+            finals.insert(regexp_matcher->storage[i].state);
+            break;
+        }
+    }
+    // Create element(before *)
+    elem before;
+                
+    before.state = (*cur_state);
+    before.next_state = (*next_state);
+    before.input = save_before;
+    // Save accept state
+    finals.insert(before.state);
+
+    // Store
+    regexp_matcher->storage.push_back(before);
+
+    // Save jumping epsilon's state(jump before)
+    jump_before_next = (*cur_state);
+
+    (*cur_state)++;
+    (*next_state)++;
+
+    // Create element(after epsilon)
+    elem after;
+
+    after.state = (*cur_state);
+    after.next_state = (*next_state);
+    after.input = "";
+    // Save accept state
+    finals.insert(after.state);
+    finals.insert(after.next_state);
+
+    // Store
+    regexp_matcher->storage.push_back(after);
+
+    // Save jumping epsilon's state(jump before)
+    jump_before_next = (*next_state);
+    // Save jumping epsilon's state(jump after)
+    jump_after_cur = (*next_state);
+
+    // Create element(jump after epsilon)
+    elem jump_after;
+
+    jump_after.state = jump_after_cur;
+    jump_after.next_state = jump_after_next;
+    jump_after.input = "";
+
+    // Create element(jump before epsilon)
+    elem jump_before;
+    
+    jump_before.state = jump_before_cur;
+    jump_before.next_state = jump_before_next;
+    jump_before.input = "";
+
+    // Store
+    regexp_matcher->storage.push_back(jump_after);
+    regexp_matcher->storage.push_back(jump_before);
+
+    (*cur_state)++;
+    (*next_state)++;
+    (*index)++;
+
+    // If it's end of stream, set accept states.
+    if(regexp[*index] == '\0'){
+        for(iter = finals.begin(); iter != finals.end(); iter++){
+            accept_states->push_back(*iter);
+        }
+    }
 }
