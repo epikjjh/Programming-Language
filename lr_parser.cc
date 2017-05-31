@@ -42,56 +42,65 @@ bool RunLRParser(const LRParser& lr_parser, const std::string& str) {
 
     // Assume that input symbol size must be 1.(By test file)
     /* Loop until EOF input comes to stack */
-    while(index != str.size()){
+    while(lr_stack.top() != '$'){
         // Find next action and state.
         next = Match(lr_parser.table,lr_stack.top(),str[index]);
 
-        /* INVALID action */
-        // If can't find proper action or state, return false/
-        if(next.first == INVALID){
-            return false;
-        }
-        /* SHIFT action */
-        // If shift action, push input symbol and next state into stack.
-        else if(next.first == SHIFT){
-            // Push input symbol and next state.
-            lr_stack.push(str[index++]);
-            lr_stack.push(next.second);
-        }
-        /* REDUCE action */
-        else if(next.first == REDUCE){
-            /* Prepare for pop */
-            // Be careful of zero indexing.(When stores in vector)
-            // Input of rule id starts with 1.(By test file)
-            pop_num = lr_parser.rules[next.second - 1].num_rhs * 2;
+        switch(next.first){
+            /* INVALID action */
+            // If can't find proper action or state, return false/
+            case(INVALID) :
+                return false;
+                break;
+
+            /* SHIFT action */
+            // If shift action, push input symbol and next state into stack.
+            case(SHIFT) :
+                // Push input symbol and next state.
+                lr_stack.push(str[index++]);
+                lr_stack.push(next.second);
+                break;
+
+            /* REDUCE action */
+            case(REDUCE) :
+                /* Prepare for pop */
+                // Be careful of zero indexing.(When stores in vector)
+                // Input of rule id starts with 1.(By test file)
+                pop_num = lr_parser.rules[next.second - 1].num_rhs * 2;
             
-            /* Remeber there are stats between symbols. */
-            // Number to be popped = number of RHS * 2(Symbols + States)
-            // Then push changed symbol into stack : LHS
-            // Because RHS changes to LHS!
+                /* Remeber there are stats between symbols. */
+                // Number to be popped = number of RHS * 2(Symbols + States)
+                // Then push changed symbol into stack : LHS
+                // Because RHS changes to LHS!
 
-            // Pop : RHS * 2
-            for(int i = 0; i < pop_num; i++)
-                lr_stack.pop();
+                // Pop : RHS * 2
+                for(int i = 0; i < pop_num; i++)
+                    lr_stack.pop();
 
-            /* Find goto action in goto table. */
-            // G[State located before the very changed symbol, changed symbol]
-            go_to = Match(lr_parser.table, lr_stack.top(), lr_parser.rules[next.second-1].lhs_symbol);
+                /* Find goto action in goto table. */
+                // G[State located before the very changed symbol, changed symbol]
+                go_to = Match(lr_parser.table, lr_stack.top(), lr_parser.rules[next.second-1].lhs_symbol);
 
-            // Push : LHS
-            lr_stack.push(lr_parser.rules[next.second -1].lhs_symbol);
+                // Push : LHS
+                lr_stack.push(lr_parser.rules[next.second -1].lhs_symbol);
 
-            // If it's not goto action, return false.
-            if(go_to.first != GOTO)
-                 return false;
+                // If it's not goto action, return false.
+                if(go_to.first != GOTO)
+                     return false;
 
-            // Push : state from goto table
-            lr_stack.push(go_to.second);
-         }
-         /* ACCEPT action */
-         else if(next.first == ACCEPT)
-             return true;
+                // Push : state from goto table
+                lr_stack.push(go_to.second);
+                break;
+
+            /* ACCEPT action */
+            case(ACCEPT) :
+                return true;
+                break;
+         
+        }
+
     }
+
     return false;
 }
 /* This function finds action and next state */
@@ -99,7 +108,7 @@ pair<LRAction, int> Match(vector<LRTableElement> table, int state, int symbol){
     for(int i = 0; i < table.size(); i++){
         // Find action and next state
         if(table[i].state == state && table[i].symbol == symbol){
-            return make_pair(table.at(i).action, table.at(i).next_state);
+            return make_pair(table[i].action, table[i].next_state);
         }
     }
     // If can't find proper pair, ruturn INVALID.

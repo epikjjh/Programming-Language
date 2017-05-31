@@ -116,7 +116,7 @@ bool BuildFSA(const std::vector<FSATableElement>& elements,
     // When one state has two or more next_state.
     for(int i = 0; i < storage.size(); i++){
         for(int j = i+1; j < storage.size(); j++){
-            // Same current state, same input.
+            // Same current state, same input, but different next state.
             if(storage[i].state == storage[j].state && storage[i].input == storage[j].input){
                 nfa = 1;
                 break;
@@ -175,7 +175,7 @@ std::string Check_epsilon(const std::vector<elem>& storage, int state){
     set<int> available_state;
     set<int>::iterator iter;
     string cluster;
-    int top,cluster_size;
+    int top;
 
     // Initializing by given state.
     state_stack.push(state);
@@ -189,13 +189,10 @@ std::string Check_epsilon(const std::vector<elem>& storage, int state){
         for(int i = 0; i < storage.size(); i++){
             // When finds epsilon.
             if(storage[i].state == top && storage[i].input == 0){
-                cluster_size = available_state.size();
                 // Put available states by epsilon.
-                available_state.insert(storage[i].next_state);
-
                 // When can't find every available states yet.
                 // Comparing two size to avoid pushing duplicated states. : set
-                if(available_state.size() != cluster_size)
+                if(available_state.insert(storage[i].next_state).second)
                     state_stack.push(storage[i].next_state);
             }
          }
@@ -220,7 +217,7 @@ std::string Check_next(const std::vector<elem>& storage, int state, char input){
 
     for(int i = 0; i < cur_state.size(); i++){
         // Split cluster in to pieces.
-        cur_piece = (int)(cur_state.at(i) - '0');
+        cur_piece = (int)(cur_state[i] - '0');
         for(int j = 0; j < storage.size(); j++){
             // Find next pieces and put those in to set. 
             if(cur_piece == storage[j].state && input == storage[j].input){
@@ -295,15 +292,18 @@ void Make_nfa_table(const std::vector<elem>& storage, FiniteStateAutomaton *fsa)
             // transition = current state + input
             // next state : Using another function. -> next state can be multiple
             next_state = Find_next(storage,cur_state,*iter);
+            // If there are no next states.
+            if(next_state.empty())
+                continue;
             transition = cur_state + *iter;
 
             // Put transition and next state in to fsa
             fsa->table[transition] =  next_state;
 
             // Loop until next state is not in exist and not same as current state(Recursive case)
-            if(cur_state != next_state && exist.find(next_state) == exist.end()){
+            if(cur_state != next_state && exist.insert(next_state).second == true){
                 state_stack.push(next_state);
-                exist.insert(next_state);
+
             }
         }
     }

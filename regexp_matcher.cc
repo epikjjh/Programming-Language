@@ -283,7 +283,7 @@ std::string Check_epsilon(const RegExpMatcher& regexp_matcher, int state){
     set<int> available_state;
     set<int>::iterator iter;
     string cluster;
-    int top,cluster_size;
+    int top;
 
     // Initializing by given state.
     state_stack.push(state);
@@ -297,13 +297,10 @@ std::string Check_epsilon(const RegExpMatcher& regexp_matcher, int state){
         for(int i = 0; i < regexp_matcher.garage.size(); i++){
             // When finds epsilon.
             if(regexp_matcher.garage[i].state == top && regexp_matcher.garage[i].input == 0){
-                cluster_size = available_state.size();
                 // Put available states by epsilon.
-                available_state.insert(regexp_matcher.garage[i].next_state);
-
                 // When can't find every available states yet.
                 // Comparing two size to avoid pushing duplicated states. : set
-                if(available_state.size() != cluster_size)
+                if(available_state.insert(regexp_matcher.garage[i].next_state).second)
                     state_stack.push(regexp_matcher.garage[i].next_state);
             }
          }
@@ -328,7 +325,7 @@ std::string Check_next(const RegExpMatcher& regexp_matcher, int state, char inpu
 
     for(int i = 0; i < cur_state.size(); i++){
         // Split cluster in to pieces.
-        cur_piece = (int)(cur_state.at(i) - '0');
+        cur_piece = (int)(cur_state[i] - '0');
         for(int j = 0; j < regexp_matcher.garage.size(); j++){
             // Find next pieces and put those in to set. 
             if(cur_piece == regexp_matcher.garage[j].state && input == regexp_matcher.garage[j].input){
@@ -403,15 +400,16 @@ void Make_nfa_table(RegExpMatcher *regexp_matcher){
             // transition = current state + input
             // next state : Using another function. -> next state can be multiple
             next_state = Find_next(*regexp_matcher,cur_state,*iter);
+            if(next_state.empty())
+                continue;
             transition = cur_state + *iter;
 
             // Put transition and next state in to fsa
             regexp_matcher->fsa.table[transition] =  next_state;
 
             // Loop until next state is not in exist and not same as current state(Recursive case)
-            if(cur_state != next_state && exist.find(next_state) == exist.end()){
+            if(cur_state != next_state && exist.insert(next_state).second == true){
                 state_stack.push(next_state);
-                exist.insert(next_state);
             }
         }
     }
