@@ -154,11 +154,13 @@ bool BuildFSA(const std::vector<FSATableElement>& elements,
             if(storage[i].input != '0')
                 fsa->input_list.insert(storage[i].input);
         }
-        Make_nfa_table(storage, fsa);
 
         // Initialize accept states.
         for(int i = 0; i < accept_states.size(); i++)
             fsa->accept.push_back(accept_states[i]);
+
+        // Make NFA table.
+        Make_nfa_table(storage, fsa);
     }
 
     LOG << "num_elements: " << elements.size()
@@ -285,7 +287,6 @@ void Make_nfa_table(const std::vector<elem>& storage, FiniteStateAutomaton *fsa)
 
     while(!state_stack.empty()){
         cur_state = state_stack.top();
-
         state_stack.pop();
         for(iter = fsa->input_list.begin(); iter != fsa->input_list.end(); iter++){
             /* Initialize transition and next state */

@@ -228,11 +228,13 @@ bool BuildRegExpMatcher(const char* regexp, RegExpMatcher* regexp_matcher) {
             if(regexp_matcher->garage[i].input != '0')
                 regexp_matcher->fsa.input_list.insert(regexp_matcher->garage[i].input);
         }
-        Make_nfa_table(regexp_matcher);
 
         // Initialize accept states.
         for(int i = 0; i < accept_states.size(); i++)
             regexp_matcher->fsa.accept.push_back(accept_states[i]);
+
+        // Make NFA table.
+        Make_nfa_table(regexp_matcher);
     }
 
     return true;
