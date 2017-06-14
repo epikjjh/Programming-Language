@@ -21,3 +21,6 @@ flipstack n input = (fliplist (take (findplace n input) input)) ++ (drop (findpl
 
 -- Main process
 flipcoin list
+    | list == (take (length list) (repeat 'H')) = [0]
+    | list == (take (length list) (repeat 'T')) = [length list,0]
+    | otherwise = (findplace (length list) list) : flipcoin(flipstack (length list) list)
