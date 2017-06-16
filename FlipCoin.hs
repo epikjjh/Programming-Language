@@ -20,7 +20,8 @@ flipstack :: Int -> String -> String
 flipstack n input = (fliplist (take (findplace n input) input)) ++ (drop (findplace n input) input)
 
 -- Main process
+flipcoin :: String -> [Int]
 flipcoin list
     | list == (take (length list) (repeat 'H')) = [0]
-    | list == (take (length list) (repeat 'T')) = [length list,0]
+    | list == (take (length list) (repeat 'T')) = [(length list),0]
     | otherwise = (findplace (length list) list) : flipcoin(flipstack (length list) list)
